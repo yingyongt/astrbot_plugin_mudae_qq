@@ -26,6 +26,8 @@ class CCB_Plugin(Star):
         self.claim_cooldown_default = self.config.claim_cooldown or 3600
         self.harem_max_size_default = self.config.harem_max_size or 10
         self.custom_images_limit_default = self.config.custom_images_limit or 5
+        self.draw_gender_filter = self.config.draw_gender_filter or "全部"
+        self.draw_min_heat = self.config.draw_min_heat or 0
         self.group_cfgs = {}
         self.user_lists = {}
         self.group_locks = {}
@@ -238,7 +240,11 @@ class CCB_Plugin(Star):
                 char_id = random.choice(wish_list)
                 character = self.char_manager.get_character_by_id(char_id)
             else:
-                character = self.char_manager.get_random_character(limit=config.get('draw_scope', None))
+                character = self.char_manager.get_random_character(
+                    limit=config.get('draw_scope', None),
+                    gender=self.draw_gender_filter,
+                    min_heat=self.draw_min_heat,
+                )
             if not character:
                 yield event.plain_result("卡池数据未加载")
                 return

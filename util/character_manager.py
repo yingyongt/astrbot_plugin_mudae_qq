@@ -32,6 +32,8 @@ class CharacterManager:
         self._id_index: dict[int, dict] | None = None
         self._bonds: dict[str, list[int]] | None = None
         self._char_to_bonds: dict[int, list[str]] | None = None
+        self._filtered_cache: list[dict] | None = None
+        self._filtered_cache_key: tuple | None = None
 
     def load_characters(self) -> list[dict]:
         """Load pre-sorted character pool from file once."""
@@ -104,14 +106,53 @@ class CharacterManager:
             result.append((bond_name, owned, total, ratio, owned_cids))
         return result
 
-    def get_random_character(self, limit=None):
-        """Return a random character dict, or None if pool empty."""
-        chars = self.load_characters()
+    def get_random_character(self, limit=None, gender=None, min_heat=0):
+        """Return a random character dict, or None if pool empty.
+
+        Args:
+            limit: 取热度前 N 个角色（角色池已按热度降序排列）
+            gender: 性别筛选，可选 "全部"/"男"/"女"，None 或 "全部" 表示不筛选
+            min_heat: 热度最小值，0 表示不限制
+        """
+        chars = self._get_filtered_pool(gender, min_heat)
         if not chars:
             return None
         if limit:
             chars = chars[:limit]
         return random.choice(chars)
+
+    def _get_filtered_pool(self, gender=None, min_heat=0):
+        """根据性别和热度最小值筛选角色池，结果会缓存以避免重复过滤。"""
+        cache_key = (gender, min_heat)
+        if self._filtered_cache_key == cache_key and self._filtered_cache is not None:
+            return self._filtered_cache
+        chars = self.load_characters()
+        if gender and gender != "全部":
+            if gender == "男":
+                chars = [c for c in chars if self._is_male(c.get("gender"))]
+            elif gender == "女":
+                chars = [c for c in chars if self._is_female(c.get("gender"))]
+        if min_heat > 0:
+            chars = [c for c in chars if (c.get("heat") or 0) >= min_heat]
+        self._filtered_cache = chars
+        self._filtered_cache_key = cache_key
+        return chars
+
+    @staticmethod
+    def _is_male(gender_val) -> bool:
+        """判断角色性别是否为男。"""
+        if not gender_val:
+            return False
+        g = str(gender_val)
+        return g.startswith("男") or g in ("♂", "男性", "公", "雄", "雄性")
+
+    @staticmethod
+    def _is_female(gender_val) -> bool:
+        """判断角色性别是否为女。"""
+        if not gender_val:
+            return False
+        g = str(gender_val)
+        return g.startswith("女") or g in ("♀", "女性", "母", "雌", "雌性")
 
     def get_character_by_id(self, id):
         """O(1) lookup via cached id index; builds index on first use."""

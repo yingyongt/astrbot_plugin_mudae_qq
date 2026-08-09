@@ -33,5 +33,20 @@
       "hint": "超过后会无法添加自定义图片",
       "obvious_hint": true,
       "default": 5
+    },
+    "draw_gender_filter": {
+      "description": "抽卡性别筛选",
+      "type": "string",
+      "options": ["全部", "男", "女"],
+      "default": "全部",
+      "hint": "筛选可抽到角色的性别范围",
+      "obvious_hint": true
+    },
+    "draw_min_heat": {
+      "description": "抽卡热度最小值",
+      "type": "int",
+      "hint": "只抽热度大于等于此值的角色，0表示不限制",
+      "obvious_hint": true,
+      "default": 0
     }
 }
